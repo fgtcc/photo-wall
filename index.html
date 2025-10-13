@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>照片墙 - Photo Wall</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <header class="header">
+            <h1><i class="fas fa-images"></i> 照片墙</h1>
+            <div class="header-actions">
+                <div class="layout-controls">
+                    <span class="layout-label">布局:</span>
+                    <div class="layout-buttons">
+                        <button id="gridLayout" class="layout-btn active" data-layout="grid" title="网格布局">
+                            <i class="fas fa-th"></i>
+                        </button>
+                        <button id="masonryLayout" class="layout-btn" data-layout="masonry" title="瀑布流">
+                            <i class="fas fa-th-large"></i>
+                        </button>
+                        <button id="listLayout" class="layout-btn" data-layout="list" title="列表布局">
+                            <i class="fas fa-list"></i>
+                        </button>
+                        <button id="carouselLayout" class="layout-btn" data-layout="carousel" title="轮播模式">
+                            <i class="fas fa-images"></i>
+                        </button>
+                        <button id="starLayout" class="layout-btn" data-layout="star" title="星空布局">
+                            <i class="fas fa-star"></i>
+                        </button>
+                        <button id="kaleidoscopeLayout" class="layout-btn" data-layout="kaleidoscope" title="万花筒布局">
+                            <i class="fas fa-shapes"></i>
+                        </button>
+                        <button id="spiralLayout" class="layout-btn" data-layout="spiral" title="螺旋布局">
+                            <i class="fas fa-circle-notch"></i>
+                        </button>
+                        <button id="waveLayout" class="layout-btn" data-layout="wave" title="波浪布局">
+                            <i class="fas fa-wave-square"></i>
+                        </button>
+                        <button id="card3dLayout" class="layout-btn" data-layout="card3d" title="3D卡片">
+                            <i class="fas fa-cube"></i>
+                        </button>
+                    </div>
+                    <button id="layoutMarketBtn" class="btn btn-outline" title="布局市场">
+                        <i class="fas fa-store"></i> 布局市场
+                    </button>
+                </div>
+                <button id="uploadBtn" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> 上传照片
+                </button>
+                <button id="clearBtn" class="btn btn-secondary">
+                    <i class="fas fa-trash"></i> 清空
+                </button>
+            </div>
+        </header>
+
+        <!-- 上传区域 -->
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-content">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>拖拽照片到这里或点击上传</p>
+                <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+            </div>
+        </div>
+
+        <!-- 照片容器 -->
+        <div class="photo-container" id="photoContainer">
+            <!-- 网格布局 -->
+            <div class="photo-grid" id="photoGrid">
+                <!-- 照片将动态添加到这里 -->
+            </div>
+            
+            <!-- 瀑布流布局 -->
+            <div class="photo-masonry" id="photoMasonry" style="display: none;">
+                <!-- 瀑布流照片 -->
+            </div>
+            
+            <!-- 列表布局 -->
+            <div class="photo-list" id="photoList" style="display: none;">
+                <!-- 列表照片 -->
+            </div>
+            
+            <!-- 轮播布局 -->
+            <div class="photo-carousel" id="photoCarousel" style="display: none;">
+                <div class="carousel-container">
+                    <button class="carousel-btn prev" id="carouselPrev">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div class="carousel-viewport">
+                        <div class="carousel-track" id="carouselTrack">
+                            <!-- 轮播照片 -->
+                        </div>
+                    </div>
+                    <button class="carousel-btn next" id="carouselNext">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                <div class="carousel-indicators" id="carouselIndicators">
+                    <!-- 指示器 -->
+                </div>
+            </div>
+            
+            <!-- 星空布局 -->
+            <div class="photo-star" id="photoStar" style="display: none;">
+                <div class="star-container">
+                    <!-- 星空照片 -->
+                </div>
+            </div>
+            
+            <!-- 万花筒布局 -->
+            <div class="photo-kaleidoscope" id="photoKaleidoscope" style="display: none;">
+                <div class="kaleidoscope-container">
+                    <!-- 万花筒照片 -->
+                </div>
+            </div>
+            
+            <!-- 螺旋布局 -->
+            <div class="photo-spiral" id="photoSpiral" style="display: none;">
+                <div class="spiral-container">
+                    <!-- 螺旋照片 -->
+                </div>
+            </div>
+            
+            <!-- 波浪布局 -->
+            <div class="photo-wave" id="photoWave" style="display: none;">
+                <div class="wave-container">
+                    <!-- 波浪照片 -->
+                </div>
+            </div>
+            
+            <!-- 3D卡片布局 -->
+            <div class="photo-card3d" id="photoCard3d" style="display: none;">
+                <div class="card3d-container">
+                    <!-- 3D卡片照片 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 照片预览模态框 -->
+        <div class="modal" id="photoModal">
+            <div class="modal-content">
+                <span class="close" id="closeModal">&times;</span>
+                <img id="modalImage" src="" alt="">
+                <div class="modal-actions">
+                    <button id="deletePhoto" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> 删除
+                    </button>
+                    <button id="downloadPhoto" class="btn btn-success">
+                        <i class="fas fa-download"></i> 下载
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 布局市场模态框 -->
+        <div class="modal" id="layoutMarketModal">
+            <div class="modal-content layout-market">
+                <div class="modal-header">
+                    <h2><i class="fas fa-store"></i> 布局市场</h2>
+                    <span class="close" id="closeMarketModal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="market-tabs">
+                        <button class="tab-btn active" data-tab="browse">浏览布局</button>
+                        <button class="tab-btn" data-tab="import">导入布局</button>
+                        <button class="tab-btn" data-tab="export">导出布局</button>
+                    </div>
+                    
+                    <div class="tab-content active" id="browseTab">
+                        <div class="layout-gallery">
+                            <div class="layout-item">
+                                <div class="layout-preview">
+                                    <i class="fas fa-th"></i>
+                                </div>
+                                <h3>经典网格</h3>
+                                <p>传统网格布局</p>
+                                <button class="btn btn-sm">应用</button>
+                            </div>
+                            <!-- 更多布局项... -->
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" id="importTab">
+                        <div class="import-area">
+                            <input type="file" id="layoutFileInput" accept=".json" style="display: none;">
+                            <div class="import-zone" id="importZone">
+                                <i class="fas fa-upload"></i>
+                                <p>拖拽布局文件到这里或点击选择</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" id="exportTab">
+                        <div class="export-options">
+                            <h3>导出当前布局</h3>
+                            <button class="btn btn-primary" id="exportCurrentLayout">导出当前布局</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 加载指示器 -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>处理中...</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
