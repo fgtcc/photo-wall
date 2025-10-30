@@ -8,78 +8,82 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <!-- 头部 -->
-        <header class="header">
-            <h1><i class="fas fa-images"></i> 照片墙</h1>
-            <div class="header-actions">
-                <div class="layout-controls">
-                    <span class="layout-label">布局:</span>
-                    <div class="layout-buttons">
-                        <button id="gridLayout" class="layout-btn active" data-layout="grid" title="网格布局">
-                            <i class="fas fa-th"></i>
-                        </button>
-                        <button id="masonryLayout" class="layout-btn" data-layout="masonry" title="瀑布流">
-                            <i class="fas fa-th-large"></i>
-                        </button>
-                        <button id="listLayout" class="layout-btn" data-layout="list" title="列表布局">
-                            <i class="fas fa-list"></i>
-                        </button>
-                        <button id="carouselLayout" class="layout-btn" data-layout="carousel" title="轮播模式">
-                            <i class="fas fa-images"></i>
-                        </button>
-                        <button id="starLayout" class="layout-btn" data-layout="star" title="星空布局">
-                            <i class="fas fa-star"></i>
-                        </button>
-                        <button id="kaleidoscopeLayout" class="layout-btn" data-layout="kaleidoscope" title="万花筒布局">
-                            <i class="fas fa-shapes"></i>
-                        </button>
-                        <button id="spiralLayout" class="layout-btn" data-layout="spiral" title="螺旋布局">
-                            <i class="fas fa-circle-notch"></i>
-                        </button>
-                        <button id="waveLayout" class="layout-btn" data-layout="wave" title="波浪布局">
-                            <i class="fas fa-wave-square"></i>
-                        </button>
-                        <button id="card3dLayout" class="layout-btn" data-layout="card3d" title="3D卡片">
-                            <i class="fas fa-cube"></i>
-                        </button>
-                    </div>
-                    <button id="layoutMarketBtn" class="btn btn-outline" title="布局市场">
-                        <i class="fas fa-store"></i> 布局市场
-                    </button>
-                    <button id="layoutConfigBtn" class="btn btn-outline" title="布局配置" style="display: none;">
-                        <i class="fas fa-cog"></i> 配置
-                    </button>
-                </div>
-                <div class="view-controls" id="viewControls" style="display: none;">
-                    <button id="zoomInBtn" class="btn btn-sm" title="放大">
-                        <i class="fas fa-search-plus"></i>
-                    </button>
-                    <button id="zoomOutBtn" class="btn btn-sm" title="缩小">
-                        <i class="fas fa-search-minus"></i>
-                    </button>
-                    <button id="resetViewBtn" class="btn btn-sm" title="重置视图">
-                        <i class="fas fa-home"></i>
-                    </button>
-                    <span class="zoom-level" id="zoomLevel">100%</span>
-                </div>
-                <button id="uploadBtn" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> 上传照片
-                </button>
-                <button id="clearBtn" class="btn btn-secondary">
-                    <i class="fas fa-trash"></i> 清空
-                </button>
-            </div>
-        </header>
-
-        <!-- 上传区域 -->
-        <div class="upload-area" id="uploadArea">
-            <div class="upload-content">
-                <i class="fas fa-cloud-upload-alt"></i>
-                <p>拖拽照片到这里或点击上传</p>
-                <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
-            </div>
+    <!-- 隐藏的文件上传输入 -->
+    <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+    
+    <!-- 悬浮工具栏 -->
+    <div class="floating-toolbar">
+        <div class="toolbar-brand">
+            <i class="fas fa-images"></i>
+            <span>照片墙</span>
         </div>
+        <div class="toolbar-actions">
+            <button id="uploadBtn" class="toolbar-btn" title="上传照片">
+                <i class="fas fa-cloud-upload-alt"></i>
+            </button>
+            <button id="layoutMarketBtn" class="toolbar-btn" title="布局市场">
+                <i class="fas fa-store"></i>
+            </button>
+            <button id="layoutConfigBtn" class="toolbar-btn" title="布局配置" style="display: none;">
+                <i class="fas fa-cog"></i>
+            </button>
+            <button id="clearBtn" class="toolbar-btn" title="清空照片">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 缩放控制（悬浮） -->
+    <div class="zoom-controls" id="viewControls" style="display: none;">
+        <button id="zoomInBtn" class="zoom-btn" title="放大">
+            <i class="fas fa-search-plus"></i>
+        </button>
+        <button id="zoomOutBtn" class="zoom-btn" title="缩小">
+            <i class="fas fa-search-minus"></i>
+        </button>
+        <button id="resetViewBtn" class="zoom-btn" title="重置视图">
+            <i class="fas fa-expand-arrows-alt"></i>
+        </button>
+        <div class="zoom-level-display" id="zoomLevel">100%</div>
+    </div>
+
+    <!-- 布局切换悬浮按钮 -->
+    <div class="layout-fab">
+        <button class="fab-main" id="layoutFabBtn" title="切换布局">
+            <i class="fas fa-th"></i>
+        </button>
+        <div class="fab-menu" id="layoutFabMenu">
+            <button class="fab-item active" id="gridLayout" data-layout="grid" title="网格布局">
+                <i class="fas fa-th"></i>
+            </button>
+            <button class="fab-item" id="masonryLayout" data-layout="masonry" title="瀑布流">
+                <i class="fas fa-th-large"></i>
+            </button>
+            <button class="fab-item" id="listLayout" data-layout="list" title="列表布局">
+                <i class="fas fa-list"></i>
+            </button>
+            <button class="fab-item" id="carouselLayout" data-layout="carousel" title="轮播模式">
+                <i class="fas fa-images"></i>
+            </button>
+            <button class="fab-item" id="starLayout" data-layout="star" title="星空布局">
+                <i class="fas fa-star"></i>
+            </button>
+            <button class="fab-item" id="kaleidoscopeLayout" data-layout="kaleidoscope" title="万花筒">
+                <i class="fas fa-shapes"></i>
+            </button>
+            <button class="fab-item" id="spiralLayout" data-layout="spiral" title="螺旋布局">
+                <i class="fas fa-circle-notch"></i>
+            </button>
+            <button class="fab-item" id="waveLayout" data-layout="wave" title="波浪布局">
+                <i class="fas fa-wave-square"></i>
+            </button>
+            <button class="fab-item" id="card3dLayout" data-layout="card3d" title="3D卡片">
+                <i class="fas fa-cube"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="container">
 
         <!-- 照片容器 -->
         <div class="photo-container" id="photoContainer">

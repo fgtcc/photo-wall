@@ -60,8 +60,14 @@ class PhotoWall {
         this.loadLayoutPreference();
         this.loadLayoutConfigs();
         this.bindEvents();
-        this.renderPhotos();
-        this.initInteractiveContainers();
+        
+        // 如果没有照片，加载默认示例图片
+        if (this.photos.length === 0) {
+            this.loadDefaultPhotos();
+        } else {
+            this.renderPhotos();
+            this.initInteractiveContainers();
+        }
         
         // 测试交互功能
         setTimeout(() => {
@@ -72,16 +78,10 @@ class PhotoWall {
     bindEvents() {
         // 文件上传相关事件
         const fileInput = document.getElementById('fileInput');
-        const uploadArea = document.getElementById('uploadArea');
         const uploadBtn = document.getElementById('uploadBtn');
 
         // 点击上传按钮
         uploadBtn.addEventListener('click', () => {
-            fileInput.click();
-        });
-
-        // 点击上传区域
-        uploadArea.addEventListener('click', () => {
             fileInput.click();
         });
 
@@ -90,20 +90,39 @@ class PhotoWall {
             this.handleFiles(e.target.files);
         });
 
-        // 拖拽上传
-        uploadArea.addEventListener('dragover', (e) => {
+        // 全局拖拽上传
+        document.body.addEventListener('dragover', (e) => {
             e.preventDefault();
-            uploadArea.classList.add('dragover');
+            e.stopPropagation();
         });
 
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragover');
+        document.body.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.dataTransfer.files.length > 0) {
+                this.handleFiles(e.dataTransfer.files);
+            }
         });
 
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            this.handleFiles(e.dataTransfer.files);
+        // FAB按钮交互
+        const fabBtn = document.getElementById('layoutFabBtn');
+        const fabMenu = document.getElementById('layoutFabMenu');
+        
+        fabBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            fabBtn.classList.toggle('active');
+            fabMenu.classList.toggle('active');
+        });
+
+        // 点击其他地方关闭FAB菜单
+        document.addEventListener('click', () => {
+            fabBtn.classList.remove('active');
+            fabMenu.classList.remove('active');
+        });
+
+        // 阻止FAB菜单点击事件冒泡
+        fabMenu.addEventListener('click', (e) => {
+            e.stopPropagation();
         });
 
         // 清空按钮
@@ -111,11 +130,15 @@ class PhotoWall {
             this.clearAllPhotos();
         });
 
-        // 布局切换按钮
-        document.querySelectorAll('.layout-btn').forEach(btn => {
+        // 布局切换按钮（FAB菜单中）
+        document.querySelectorAll('.fab-item').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const layout = e.currentTarget.dataset.layout;
                 this.switchLayout(layout);
+                
+                // 关闭FAB菜单
+                fabBtn.classList.remove('active');
+                fabMenu.classList.remove('active');
             });
         });
 
@@ -420,11 +443,16 @@ class PhotoWall {
         }
     }
 
+    // 获取照片URL的统一方法
+    getPhotoUrl(photo) {
+        return photo.url || photo.thumbnail || photo.dataUrl || '';
+    }
+
     renderGridLayout() {
         const photoGrid = document.getElementById('photoGrid');
         photoGrid.innerHTML = this.photos.map((photo, index) => `
             <div class="photo-item" data-index="${index}" draggable="true">
-                <img src="${photo.thumbnail}" alt="${photo.name}" loading="lazy">
+                <img src="${this.getPhotoUrl(photo)}" alt="${photo.name}" loading="lazy">
                 <button class="delete-btn" onclick="photoWall.deletePhoto(${index})">
                     <i class="fas fa-trash"></i>
                 </button>
@@ -438,7 +466,7 @@ class PhotoWall {
         const photoMasonry = document.getElementById('photoMasonry');
         photoMasonry.innerHTML = this.photos.map((photo, index) => `
             <div class="photo-item" data-index="${index}" draggable="true">
-                <img src="${photo.dataUrl}" alt="${photo.name}" loading="lazy">
+                <img src="${this.getPhotoUrl(photo)}" alt="${photo.name}" loading="lazy">
                 <button class="delete-btn" onclick="photoWall.deletePhoto(${index})">
                     <i class="fas fa-trash"></i>
                 </button>
@@ -452,11 +480,11 @@ class PhotoWall {
         const photoList = document.getElementById('photoList');
         photoList.innerHTML = this.photos.map((photo, index) => `
             <div class="photo-item" data-index="${index}" draggable="true">
-                <img src="${photo.thumbnail}" alt="${photo.name}" loading="lazy">
+                <img src="${this.getPhotoUrl(photo)}" alt="${photo.name}" loading="lazy">
                 <div class="photo-info">
                     <div class="photo-name">${photo.name}</div>
                     <div class="photo-meta">
-                        ${this.formatFileSize(photo.size)} • ${this.formatDate(photo.uploadTime)}
+                        ${this.formatFileSize(photo.size || 0)} • ${this.formatDate(photo.uploadTime || new Date().toISOString())}
                     </div>
                 </div>
                 <button class="delete-btn" onclick="photoWall.deletePhoto(${index})">
@@ -496,7 +524,7 @@ class PhotoWall {
 
         carouselTrack.innerHTML = this.photos.map((photo, index) => `
             <div class="carousel-item" data-index="${index}">
-                <img src="${photo.dataUrl}" alt="${photo.name}">
+                <img src="${this.getPhotoUrl(photo)}" alt="${photo.name}">
             </div>
         `).join('');
 
@@ -653,12 +681,22 @@ class PhotoWall {
     }
 
     updateLayoutButtons() {
-        document.querySelectorAll('.layout-btn').forEach(btn => {
+        document.querySelectorAll('.fab-item').forEach(btn => {
             btn.classList.remove('active');
             if (btn.dataset.layout === this.currentLayout) {
                 btn.classList.add('active');
             }
         });
+        
+        // 更新FAB主按钮图标
+        const fabMainIcon = document.querySelector('.fab-main i');
+        const activeBtn = document.querySelector('.fab-item.active');
+        if (fabMainIcon && activeBtn) {
+            const activeIcon = activeBtn.querySelector('i');
+            if (activeIcon) {
+                fabMainIcon.className = activeIcon.className;
+            }
+        }
     }
 
     carouselNext() {
@@ -805,7 +843,7 @@ class PhotoWall {
             return `
                 <div class="star-item" data-index="${index}" 
                      style="left: ${x}px; top: ${y}px; width: ${config.itemSize}px; height: ${config.itemSize}px;">
-                    <img src="${photo.thumbnail}" alt="${photo.name}" loading="lazy">
+                    <img src="${this.getPhotoUrl(photo)}" alt="${photo.name}" loading="lazy">
                     <button class="delete-btn" onclick="photoWall.deletePhoto(${index})">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -821,7 +859,7 @@ class PhotoWall {
         const kaleidoscopeContainer = document.getElementById('photoKaleidoscope');
         kaleidoscopeContainer.innerHTML = this.photos.map((photo, index) => `
             <div class="kaleidoscope-item" data-index="${index}">
-                <img src="${photo.thumbnail}" alt="${photo.name}" loading="lazy">
+                <img src="${this.getPhotoUrl(photo)}" alt="${photo.name}" loading="lazy">
                 <button class="delete-btn" onclick="photoWall.deletePhoto(${index})">
                     <i class="fas fa-trash"></i>
                 </button>
@@ -852,7 +890,7 @@ class PhotoWall {
             return `
                 <div class="spiral-item" data-index="${index}" 
                      style="left: ${x}px; top: ${y}px; width: ${config.itemSize}px; height: ${config.itemSize}px;">
-                    <img src="${photo.thumbnail}" alt="${photo.name}" loading="lazy">
+                    <img src="${this.getPhotoUrl(photo)}" alt="${photo.name}" loading="lazy">
                     <button class="delete-btn" onclick="photoWall.deletePhoto(${index})">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -889,7 +927,7 @@ class PhotoWall {
             return `
                 <div class="wave-item" data-index="${index}" 
                      style="left: ${x}px; top: ${y}px; width: ${config.itemSize}px; height: ${config.itemSize}px;">
-                    <img src="${photo.thumbnail}" alt="${photo.name}" loading="lazy">
+                    <img src="${this.getPhotoUrl(photo)}" alt="${photo.name}" loading="lazy">
                     <button class="delete-btn" onclick="photoWall.deletePhoto(${index})">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -906,7 +944,7 @@ class PhotoWall {
         card3dContainer.innerHTML = this.photos.map((photo, index) => `
             <div class="card3d-item" data-index="${index}">
                 <div class="card-face card-front">
-                    <img src="${photo.thumbnail}" alt="${photo.name}" loading="lazy">
+                    <img src="${this.getPhotoUrl(photo)}" alt="${photo.name}" loading="lazy">
                 </div>
                 <div class="card-face card-back">
                     <i class="fas fa-image"></i>
@@ -1438,7 +1476,7 @@ class PhotoWall {
         const modal = document.getElementById('photoModal');
         const modalImage = document.getElementById('modalImage');
         
-        modalImage.src = photo.dataUrl;
+        modalImage.src = this.getPhotoUrl(photo);
         modalImage.alt = photo.name;
         modal.style.display = 'block';
     }
@@ -1477,7 +1515,7 @@ class PhotoWall {
         if (this.currentPhotoIndex >= 0) {
             const photo = this.photos[this.currentPhotoIndex];
             const link = document.createElement('a');
-            link.href = photo.dataUrl;
+            link.href = this.getPhotoUrl(photo);
             link.download = photo.name;
             link.click();
         }
@@ -1567,6 +1605,53 @@ class PhotoWall {
             console.error('加载照片失败:', error);
             this.photos = [];
         }
+    }
+
+    loadDefaultPhotos() {
+        console.log('开始加载默认照片...');
+        
+        // 显示加载提示
+        const loadingMsg = document.createElement('div');
+        loadingMsg.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px 50px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            z-index: 10000;
+            font-size: 18px;
+            color: #4a5568;
+        `;
+        loadingMsg.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在加载示例照片...';
+        document.body.appendChild(loadingMsg);
+
+        // 直接生成30张图片的URL列表
+        // 优先使用本地images目录，如果不存在则浏览器会显示占位符
+        const photos = [];
+        
+        for (let i = 1; i <= 30; i++) {
+            photos.push({
+                id: Date.now() + i,
+                url: `images/${i}.jpg`,
+                name: `风景照片 ${i}`
+            });
+        }
+        
+        this.photos = photos;
+        console.log('已生成照片列表:', photos.length, '张');
+        
+        // 渲染照片
+        this.renderPhotos();
+        this.initInteractiveContainers();
+        
+        // 移除加载提示
+        setTimeout(() => {
+            loadingMsg.remove();
+        }, 500);
     }
 
     // 布局配置管理方法
