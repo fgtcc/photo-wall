@@ -65,8 +65,8 @@ class PhotoWall {
         if (this.photos.length === 0) {
             this.loadDefaultPhotos();
         } else {
-            this.renderPhotos();
-            this.initInteractiveContainers();
+        this.renderPhotos();
+        this.initInteractiveContainers();
         }
         
         // 测试交互功能
@@ -100,7 +100,7 @@ class PhotoWall {
             e.preventDefault();
             e.stopPropagation();
             if (e.dataTransfer.files.length > 0) {
-                this.handleFiles(e.dataTransfer.files);
+            this.handleFiles(e.dataTransfer.files);
             }
         });
 
@@ -558,11 +558,11 @@ class PhotoWall {
         const photoSelectors = [
             '.photo-item', 
             '.star-item', 
-            '.kaleidoscope-item', 
             '.spiral-item', 
             '.wave-item', 
             '.card3d-item',
             '.carousel-item'
+            // 排除 kaleidoscope-segment，使用自定义的镜像效果，不需要模态框
         ];
         
         photoSelectors.forEach(selector => {
@@ -608,14 +608,47 @@ class PhotoWall {
             // 确保轮播项有正确的 data-index 属性
             item.setAttribute('data-index', index);
         });
+        
+        // 绑定预览图片点击切换
+        this.bindCarouselItemClick();
+    }
+    
+    bindCarouselItemClick() {
+        const items = document.querySelectorAll('.carousel-item');
+        
+        items.forEach((item, index) => {
+            // 移除旧的事件监听器
+            if (item._carouselItemClickHandler) {
+                item.removeEventListener('click', item._carouselItemClickHandler);
+            }
+            
+            // 创建新的点击处理函数
+            item._carouselItemClickHandler = (e) => {
+                // 如果点击的是prev或next预览图片，则切换到该图片
+                if (item.classList.contains('prev')) {
+                    e.stopPropagation(); // 阻止触发showPhotoModal
+                    this.carouselPrevious();
+                } else if (item.classList.contains('next')) {
+                    e.stopPropagation(); // 阻止触发showPhotoModal
+                    this.carouselNext();
+                }
+                // 如果是active图片，让bindPhotoEvents中的事件处理函数处理（打开模态框）
+            };
+            
+            // 添加事件监听器，使用捕获阶段确保优先执行
+            item.addEventListener('click', item._carouselItemClickHandler, true);
+        });
     }
 
     switchLayout(layout) {
         if (this.currentLayout === layout) return;
         
-        // 停止当前布局的自动播放
+        // 停止当前布局的自动播放和动画
         if (this.currentLayout === 'carousel') {
             this.stopCarouselAutoPlay();
+        }
+        if (this.currentLayout === 'kaleidoscope') {
+            this.stopKaleidoscopeAnimation();
         }
         
         this.currentLayout = layout;
@@ -716,11 +749,40 @@ class PhotoWall {
         const indicators = document.querySelectorAll('.carousel-indicator');
         
         if (track) {
-            track.style.transform = `translateX(-${this.carouselIndex * 100}%)`;
+            // 计算位置：每个项目宽度60%，考虑到padding 20%
+            track.style.transform = `translateX(-${this.carouselIndex * 60}%)`;
         }
         
         indicators.forEach((indicator, index) => {
             indicator.classList.toggle('active', index === this.carouselIndex);
+        });
+        
+        // 更新轮播项的active/prev/next类
+        this.updateCarouselClasses();
+    }
+    
+    updateCarouselClasses() {
+        const items = document.querySelectorAll('.carousel-item');
+        const totalPhotos = this.photos.length;
+        
+        if (totalPhotos === 0) return;
+        
+        // 计算prev和next的索引（循环）
+        const prevIndex = (this.carouselIndex - 1 + totalPhotos) % totalPhotos;
+        const nextIndex = (this.carouselIndex + 1) % totalPhotos;
+        
+        items.forEach((item, index) => {
+            // 移除所有状态类
+            item.classList.remove('active', 'prev', 'next');
+            
+            // 添加对应的状态类
+            if (index === this.carouselIndex) {
+                item.classList.add('active');
+            } else if (index === prevIndex) {
+                item.classList.add('prev');
+            } else if (index === nextIndex) {
+                item.classList.add('next');
+            }
         });
     }
 
@@ -854,19 +916,304 @@ class PhotoWall {
         this.bindPhotoEvents();
     }
 
-    // 万花筒布局
+    // 万花筒布局 - 动态镜像旋转效果
     renderKaleidoscopeLayout() {
         const kaleidoscopeContainer = document.getElementById('photoKaleidoscope');
-        kaleidoscopeContainer.innerHTML = this.photos.map((photo, index) => `
-            <div class="kaleidoscope-item" data-index="${index}">
-                <img src="${this.getPhotoUrl(photo)}" alt="${photo.name}" loading="lazy">
-                <button class="delete-btn" onclick="photoWall.deletePhoto(${index})">
-                    <i class="fas fa-trash"></i>
+        
+        // 清空容器
+        kaleidoscopeContainer.innerHTML = '';
+        
+        // 初始化万花筒配置
+        if (!this.kaleidoscopeConfig) {
+            this.kaleidoscopeConfig = {
+                segments: 6,        // 镜像分片数量
+                speed: 0.2,         // 旋转速度
+                paused: false,      // 是否暂停
+                colorFilter: 'none' // 颜色滤镜
+            };
+        }
+        
+        // 创建万花筒场景
+        const scene = document.createElement('div');
+        scene.className = 'kaleidoscope-scene';
+        
+        // 限制显示的照片数量，避免过多影响性能
+        const displayPhotos = this.photos.slice(0, 12);
+        const segments = this.kaleidoscopeConfig.segments;
+        
+        displayPhotos.forEach((photo, index) => {
+            // 为每张照片创建多个镜像分片
+            for (let seg = 0; seg < segments; seg++) {
+                const segment = document.createElement('div');
+                segment.className = 'kaleidoscope-segment';
+                segment.dataset.index = index;
+                segment.dataset.segment = seg;
+                
+                // 计算每个分片的旋转角度
+                const rotation = (360 / segments) * seg;
+                // 计算层级（从内到外）
+                const layer = Math.floor(index / segments);
+                const radius = 100 + layer * 120; // 每层向外扩展
+                
+                // 随机偏移让效果更自然
+                const randomOffset = (Math.random() - 0.5) * 20;
+                
+                segment.style.setProperty('--rotation', `${rotation}deg`);
+                segment.style.setProperty('--radius', `${radius}px`);
+                segment.style.setProperty('--delay', `${(index * 0.1 + seg * 0.05)}s`);
+                segment.style.setProperty('--random-offset', `${randomOffset}px`);
+                
+                // 创建镜像片段
+                const mirror = document.createElement('div');
+                mirror.className = 'kaleidoscope-mirror';
+                
+                const img = document.createElement('img');
+                img.src = this.getPhotoUrl(photo);
+                img.alt = photo.name;
+                img.loading = 'lazy';
+                
+                mirror.appendChild(img);
+                segment.appendChild(mirror);
+                
+                // 点击片段查看原图
+                segment.addEventListener('click', (e) => {
+                    if (!e.target.closest('.delete-btn') && !e.target.closest('.kaleidoscope-controls')) {
+                        this.showPhotoModal(index);
+                    }
+                });
+                
+                // 添加删除按钮（只在第一个分片显示）
+                if (seg === 0) {
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'delete-btn kaleidoscope-delete';
+                    deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                    deleteBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        this.deletePhoto(index);
+                    };
+                    segment.appendChild(deleteBtn);
+                }
+                
+                scene.appendChild(segment);
+            }
+        });
+        
+        kaleidoscopeContainer.appendChild(scene);
+        
+        // 添加中心装饰
+        const center = document.createElement('div');
+        center.className = 'kaleidoscope-center';
+        center.innerHTML = '<i class="fas fa-infinity"></i>';
+        scene.appendChild(center);
+        
+        // 添加交互控制面板
+        this.addKaleidoscopeControls(kaleidoscopeContainer);
+        
+        // 应用颜色滤镜
+        scene.setAttribute('data-filter', this.kaleidoscopeConfig.colorFilter);
+        
+        // 启动动画
+        this.startKaleidoscopeAnimation();
+    }
+    
+    addKaleidoscopeControls(container) {
+        const controls = document.createElement('div');
+        controls.className = 'kaleidoscope-controls';
+        controls.innerHTML = `
+            <div class="control-group">
+                <button id="kaleidoscope-pause" class="control-btn" title="暂停/继续">
+                    <i class="fas fa-${this.kaleidoscopeConfig.paused ? 'play' : 'pause'}"></i>
+                </button>
+                <button id="kaleidoscope-slower" class="control-btn" title="减速">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button id="kaleidoscope-faster" class="control-btn" title="加速">
+                    <i class="fas fa-plus"></i>
                 </button>
             </div>
-        `).join('');
-
-        this.bindPhotoEvents();
+            <div class="control-group">
+                <button id="kaleidoscope-segments-4" class="control-btn ${this.kaleidoscopeConfig.segments === 4 ? 'active' : ''}" title="4分片">
+                    4
+                </button>
+                <button id="kaleidoscope-segments-6" class="control-btn ${this.kaleidoscopeConfig.segments === 6 ? 'active' : ''}" title="6分片">
+                    6
+                </button>
+                <button id="kaleidoscope-segments-8" class="control-btn ${this.kaleidoscopeConfig.segments === 8 ? 'active' : ''}" title="8分片">
+                    8
+                </button>
+            </div>
+            <div class="control-group">
+                <button id="kaleidoscope-filter-none" class="control-btn ${this.kaleidoscopeConfig.colorFilter === 'none' ? 'active' : ''}" title="无滤镜">
+                    <i class="fas fa-ban"></i>
+                </button>
+                <button id="kaleidoscope-filter-warm" class="control-btn ${this.kaleidoscopeConfig.colorFilter === 'warm' ? 'active' : ''}" title="暖色">
+                    <i class="fas fa-sun"></i>
+                </button>
+                <button id="kaleidoscope-filter-cool" class="control-btn ${this.kaleidoscopeConfig.colorFilter === 'cool' ? 'active' : ''}" title="冷色">
+                    <i class="fas fa-snowflake"></i>
+                </button>
+                <button id="kaleidoscope-filter-vibrant" class="control-btn ${this.kaleidoscopeConfig.colorFilter === 'vibrant' ? 'active' : ''}" title="鲜艳">
+                    <i class="fas fa-palette"></i>
+                </button>
+            </div>
+            <div class="control-group">
+                <button id="kaleidoscope-reverse" class="control-btn" title="反转方向">
+                    <i class="fas fa-undo"></i>
+                </button>
+                <button id="kaleidoscope-random" class="control-btn" title="随机模式">
+                    <i class="fas fa-random"></i>
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(controls);
+        
+        // 绑定控制事件
+        this.bindKaleidoscopeControls();
+    }
+    
+    bindKaleidoscopeControls() {
+        // 移除旧的事件监听器（通过克隆节点）
+        const controlsContainer = document.querySelector('.kaleidoscope-controls');
+        if (!controlsContainer) return;
+        
+        const newControls = controlsContainer.cloneNode(true);
+        controlsContainer.parentNode.replaceChild(newControls, controlsContainer);
+        
+        // 暂停/继续
+        const pauseBtn = document.getElementById('kaleidoscope-pause');
+        if (pauseBtn) {
+            pauseBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.kaleidoscopeConfig.paused = !this.kaleidoscopeConfig.paused;
+                pauseBtn.innerHTML = `<i class="fas fa-${this.kaleidoscopeConfig.paused ? 'play' : 'pause'}"></i>`;
+                
+                // 控制CSS动画的暂停/继续
+                const scene = document.querySelector('.kaleidoscope-scene');
+                const container = document.getElementById('photoKaleidoscope');
+                if (this.kaleidoscopeConfig.paused) {
+                    scene?.classList.add('paused');
+                    container?.classList.add('paused');
+                } else {
+                    scene?.classList.remove('paused');
+                    container?.classList.remove('paused');
+                }
+                
+                console.log('Kaleidoscope paused:', this.kaleidoscopeConfig.paused);
+            });
+        }
+        
+        // 减速
+        document.getElementById('kaleidoscope-slower')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.kaleidoscopeConfig.speed = Math.max(0.05, this.kaleidoscopeConfig.speed - 0.05);
+            console.log('Speed:', this.kaleidoscopeConfig.speed);
+        });
+        
+        // 加速
+        document.getElementById('kaleidoscope-faster')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.kaleidoscopeConfig.speed = Math.min(1, this.kaleidoscopeConfig.speed + 0.05);
+            console.log('Speed:', this.kaleidoscopeConfig.speed);
+        });
+        
+        // 分片数量
+        [4, 6, 8].forEach(num => {
+            document.getElementById(`kaleidoscope-segments-${num}`)?.addEventListener('click', () => {
+                this.kaleidoscopeConfig.segments = num;
+                this.renderKaleidoscopeLayout();
+            });
+        });
+        
+        // 颜色滤镜
+        ['none', 'warm', 'cool', 'vibrant'].forEach(filter => {
+            document.getElementById(`kaleidoscope-filter-${filter}`)?.addEventListener('click', () => {
+                this.kaleidoscopeConfig.colorFilter = filter;
+                const scene = document.querySelector('.kaleidoscope-scene');
+                if (scene) {
+                    scene.setAttribute('data-filter', filter);
+                }
+                // 更新按钮状态
+                document.querySelectorAll('[id^="kaleidoscope-filter-"]').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.getElementById(`kaleidoscope-filter-${filter}`).classList.add('active');
+            });
+        });
+        
+        // 反转方向
+        document.getElementById('kaleidoscope-reverse')?.addEventListener('click', () => {
+            this.kaleidoscopeConfig.speed = -this.kaleidoscopeConfig.speed;
+        });
+        
+        // 随机模式
+        document.getElementById('kaleidoscope-random')?.addEventListener('click', () => {
+            this.kaleidoscopeRandomMode();
+        });
+    }
+    
+    kaleidoscopeRandomMode() {
+        // 随机改变配置
+        const speeds = [0.1, 0.2, 0.3, -0.1, -0.2, -0.3];
+        const filters = ['none', 'warm', 'cool', 'vibrant'];
+        
+        this.kaleidoscopeConfig.speed = speeds[Math.floor(Math.random() * speeds.length)];
+        this.kaleidoscopeConfig.colorFilter = filters[Math.floor(Math.random() * filters.length)];
+        
+        const scene = document.querySelector('.kaleidoscope-scene');
+        if (scene) {
+            scene.setAttribute('data-filter', this.kaleidoscopeConfig.colorFilter);
+        }
+        
+        // 更新滤镜按钮状态
+        document.querySelectorAll('[id^="kaleidoscope-filter-"]').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.getElementById(`kaleidoscope-filter-${this.kaleidoscopeConfig.colorFilter}`)?.classList.add('active');
+    }
+    
+    startKaleidoscopeAnimation() {
+        // 整体旋转动画
+        if (!this.kaleidoscopeRotation) {
+            this.kaleidoscopeRotation = 0;
+        }
+        
+        // 确保config存在
+        if (!this.kaleidoscopeConfig) {
+            console.error('Kaleidoscope config not initialized');
+            return;
+        }
+        
+        const animate = () => {
+            // 每帧都重新获取scene，避免DOM更新导致引用失效
+            const scene = document.querySelector('.kaleidoscope-scene');
+            if (!scene) {
+                // 如果scene不存在，停止动画
+                this.stopKaleidoscopeAnimation();
+                return;
+            }
+            
+            // 确保config仍然存在
+            if (this.kaleidoscopeConfig && !this.kaleidoscopeConfig.paused) {
+                this.kaleidoscopeRotation += this.kaleidoscopeConfig.speed;
+                scene.style.transform = `rotate(${this.kaleidoscopeRotation}deg)`;
+            }
+            this.kaleidoscopeAnimationFrame = requestAnimationFrame(animate);
+        };
+        
+        // 清除之前的动画
+        if (this.kaleidoscopeAnimationFrame) {
+            cancelAnimationFrame(this.kaleidoscopeAnimationFrame);
+        }
+        
+        animate();
+    }
+    
+    stopKaleidoscopeAnimation() {
+        if (this.kaleidoscopeAnimationFrame) {
+            cancelAnimationFrame(this.kaleidoscopeAnimationFrame);
+            this.kaleidoscopeAnimationFrame = null;
+        }
     }
 
     // 螺旋布局
@@ -938,24 +1285,129 @@ class PhotoWall {
         this.bindPhotoEvents();
     }
 
-    // 3D卡片布局
+    // 3D卡片布局 - Cover Flow效果
     renderCard3dLayout() {
         const card3dContainer = document.getElementById('photoCard3d');
-        card3dContainer.innerHTML = this.photos.map((photo, index) => `
-            <div class="card3d-item" data-index="${index}">
+        
+        // 如果没有初始化3D索引，设置为中间位置
+        if (this.card3dCurrentIndex === undefined) {
+            this.card3dCurrentIndex = Math.floor(this.photos.length / 2);
+        }
+        
+        const centerIndex = this.card3dCurrentIndex;
+        
+        card3dContainer.innerHTML = this.photos.map((photo, index) => {
+            const offset = index - centerIndex;
+            const absOffset = Math.abs(offset);
+            
+            // 计算3D变换参数
+            let translateX = offset * 200; // 水平间距
+            let translateZ = -absOffset * 150; // 深度
+            let rotateY = offset * 45; // 旋转角度
+            let scale = 1 - (absOffset * 0.15); // 缩放
+            let opacity = 1 - (absOffset * 0.2); // 透明度
+            
+            // 限制最小值
+            if (scale < 0.5) scale = 0.5;
+            if (opacity < 0.3) opacity = 0.3;
+            
+            const isCenter = offset === 0;
+            const zIndex = 100 - absOffset;
+            
+            return `
+                <div class="card3d-item ${isCenter ? 'center-card' : ''}" 
+                     data-index="${index}"
+                     style="
+                         transform: translateX(${translateX}px) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${scale});
+                         opacity: ${opacity};
+                         z-index: ${zIndex};
+                     ">
+                    <div class="card3d-inner">
                 <div class="card-face card-front">
-                    <img src="${this.getPhotoUrl(photo)}" alt="${photo.name}" loading="lazy">
+                            <img src="${this.getPhotoUrl(photo)}" alt="${photo.name}" loading="lazy">
+                            <div class="card-reflection"></div>
                 </div>
-                <div class="card-face card-back">
-                    <i class="fas fa-image"></i>
                 </div>
+                    ${isCenter ? `
                 <button class="delete-btn" onclick="photoWall.deletePhoto(${index})">
                     <i class="fas fa-trash"></i>
                 </button>
+                    ` : ''}
             </div>
-        `).join('');
+            `;
+        }).join('');
+        
+        // 添加导航按钮
+        const navHTML = `
+            <button class="card3d-nav prev" onclick="photoWall.card3dPrev()">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="card3d-nav next" onclick="photoWall.card3dNext()">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+            <div class="card3d-info">
+                <span class="card-name">${this.photos[centerIndex]?.name || ''}</span>
+                <span class="card-counter">${centerIndex + 1} / ${this.photos.length}</span>
+            </div>
+        `;
+        
+        card3dContainer.insertAdjacentHTML('beforeend', navHTML);
+        
+        // 点击卡片交互逻辑
+        setTimeout(() => {
+            document.querySelectorAll('.card3d-item').forEach((item, idx) => {
+                // 禁用拖拽，3D卡片使用点击导航
+                item.draggable = false;
+                
+                // 移除之前的事件监听器（如果有的话）
+                item.removeEventListener('click', item._card3dClickHandler);
+                
+                // 创建新的事件处理函数
+                item._card3dClickHandler = (e) => {
+                    // 如果点击的是删除按钮，不做处理
+                    if (e.target.classList.contains('delete-btn') || 
+                        e.target.closest('.delete-btn')) {
+                        return;
+                    }
+                    
+                    const isCenter = item.classList.contains('center-card');
+                    const photoIndex = parseInt(item.dataset.index);
+                    
+                    if (isCenter) {
+                        // 中心卡片：打开模态框
+                        this.showPhotoModal(photoIndex);
+                    } else {
+                        // 非中心卡片：切换到该位置
+                        this.card3dGoTo(photoIndex);
+                    }
+                };
+                
+                // 添加事件监听器
+                item.addEventListener('click', item._card3dClickHandler);
+            });
+        }, 100);
 
-        this.bindPhotoEvents();
+        // 不需要调用bindPhotoEvents，因为已经单独处理了3D卡片的点击事件
+        // this.bindPhotoEvents();
+    }
+    
+    card3dPrev() {
+        if (this.card3dCurrentIndex > 0) {
+            this.card3dCurrentIndex--;
+            this.renderCard3dLayout();
+        }
+    }
+    
+    card3dNext() {
+        if (this.card3dCurrentIndex < this.photos.length - 1) {
+            this.card3dCurrentIndex++;
+            this.renderCard3dLayout();
+        }
+    }
+    
+    card3dGoTo(index) {
+        this.card3dCurrentIndex = index;
+        this.renderCard3dLayout();
     }
 
     // 布局市场相关方法
@@ -1035,8 +1487,8 @@ class PhotoWall {
         // 只对可缩放布局显示视图控制和设置交互
         if (this.isZoomableLayout(this.currentLayout)) {
             this.showViewControls();
-            setTimeout(() => {
-                this.setupInteractiveContainer();
+        setTimeout(() => {
+            this.setupInteractiveContainer();
             }, 100);
         } else {
             this.hideViewControls();
@@ -1252,10 +1704,10 @@ class PhotoWall {
         const selectors = [
             '.photo-item',
             '.star-item',
-            '.kaleidoscope-item',
             '.spiral-item',
-            '.wave-item',
-            '.card3d-item'
+            '.wave-item'
+            // 排除 .card3d-item（使用点击导航）
+            // 排除 kaleidoscope（使用镜像效果，不适合拖拽）
         ];
         
         const allItems = [];
@@ -1321,7 +1773,7 @@ class PhotoWall {
             
             // 放置
             item.addEventListener('drop', (e) => {
-                e.preventDefault();
+            e.preventDefault();
                 item.classList.remove('drag-over');
                 
                 const draggedIndex = parseInt(e.dataTransfer.getData('text/plain'));
@@ -1429,7 +1881,7 @@ class PhotoWall {
         // 重置所有图片的变换
         const container = document.getElementById(this.getInteractiveContainerId());
         if (container) {
-            const photoItems = container.querySelectorAll('.photo-item, .star-item, .kaleidoscope-item, .spiral-item, .wave-item, .card3d-item, .carousel-item');
+            const photoItems = container.querySelectorAll('.photo-item, .star-item, .spiral-item, .wave-item, .card3d-item, .carousel-item');
             photoItems.forEach(item => {
                 item.style.transform = '';
                 item.style.zIndex = '';

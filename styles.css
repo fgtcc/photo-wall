@@ -395,18 +395,55 @@ body {
     display: flex;
     transition: transform 0.5s ease;
     height: 100%;
+    align-items: center;
+    padding: 0 20%;
 }
 
 .carousel-item {
-    min-width: 100%;
+    min-width: 60%;
     height: 100%;
     position: relative;
+    flex-shrink: 0;
+    transform: scale(0.7);
+    opacity: 0.4;
+    transition: all 0.5s ease;
+    pointer-events: none;
+    filter: blur(2px);
 }
 
 .carousel-item img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    border-radius: 10px;
+}
+
+/* 当前激活的轮播项（中心位置） */
+.carousel-item.active {
+    transform: scale(1);
+    opacity: 1;
+    z-index: 2;
+    pointer-events: auto;
+    filter: blur(0);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+/* 左右两侧的预览项 */
+.carousel-item.prev,
+.carousel-item.next {
+    transform: scale(0.75);
+    opacity: 0.6;
+    z-index: 1;
+    pointer-events: auto;
+    filter: blur(1px);
+    cursor: pointer;
+}
+
+.carousel-item.prev:hover,
+.carousel-item.next:hover {
+    transform: scale(0.8);
+    opacity: 0.8;
+    filter: blur(0.5px);
 }
 
 .carousel-btn {
@@ -535,79 +572,314 @@ body {
     opacity: 1;
 }
 
-/* 万花筒布局 */
+/* 万花筒布局 - 动态3D镜像效果 */
 .photo-kaleidoscope {
     margin-bottom: 30px;
     position: relative;
-    background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
-    background-size: 400% 400%;
-    animation: kaleidoscopeBg 10s ease infinite;
+    min-height: 700px;
+    background: radial-gradient(circle at center, 
+        rgba(102, 126, 234, 0.1) 0%, 
+        rgba(118, 75, 162, 0.2) 50%,
+        rgba(0, 0, 0, 0.4) 100%);
     border-radius: 20px;
     overflow: hidden;
-}
-
-@keyframes kaleidoscopeBg {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-
-.kaleidoscope-container {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
     align-items: center;
-    padding: 40px;
-    min-height: 500px;
+    justify-content: center;
+    perspective: 1500px;
 }
 
-.kaleidoscope-item {
-    width: 100px;
-    height: 100px;
-    margin: 10px;
-    border-radius: 20px;
-    background: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    transition: all 0.5s ease;
-    cursor: pointer;
-    overflow: hidden;
+.kaleidoscope-scene {
     position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 700px;
     transform-style: preserve-3d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    will-change: transform;
 }
 
-.kaleidoscope-item:hover {
-    transform: rotateY(180deg) scale(1.1);
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+.kaleidoscope-segment {
+    position: absolute;
+    width: 140px;
+    height: 140px;
+    transform-style: preserve-3d;
+    transform-origin: center center;
+    animation: kaleidoscopeFloat 4s ease-in-out infinite;
+    animation-delay: var(--delay);
 }
 
-.kaleidoscope-item img {
+@keyframes kaleidoscopeFloat {
+    0%, 100% {
+        transform: 
+            rotate(var(--rotation)) 
+            translateX(var(--radius)) 
+            translateY(var(--random-offset))
+            rotateY(0deg)
+            scale(1);
+    }
+    25% {
+        transform: 
+            rotate(var(--rotation)) 
+            translateX(calc(var(--radius) + 20px)) 
+            translateY(calc(var(--random-offset) + 10px))
+            rotateY(90deg)
+            scale(1.1);
+    }
+    50% {
+        transform: 
+            rotate(var(--rotation)) 
+            translateX(var(--radius)) 
+            translateY(calc(var(--random-offset) - 10px))
+            rotateY(180deg)
+            scale(0.95);
+    }
+    75% {
+        transform: 
+            rotate(var(--rotation)) 
+            translateX(calc(var(--radius) - 20px)) 
+            translateY(var(--random-offset))
+            rotateY(270deg)
+            scale(1.05);
+    }
+}
+
+.kaleidoscope-mirror {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 
+        0 0 20px rgba(102, 126, 234, 0.6),
+        0 0 40px rgba(118, 75, 162, 0.4),
+        inset 0 0 20px rgba(255, 255, 255, 0.3);
+    animation: kaleidoscopePulse 3s ease-in-out infinite;
+    animation-delay: var(--delay);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+@keyframes kaleidoscopePulse {
+    0%, 100% {
+        box-shadow: 
+            0 0 20px rgba(102, 126, 234, 0.6),
+            0 0 40px rgba(118, 75, 162, 0.4),
+            inset 0 0 20px rgba(255, 255, 255, 0.3);
+        filter: brightness(1) saturate(1);
+    }
+    50% {
+        box-shadow: 
+            0 0 30px rgba(102, 126, 234, 0.8),
+            0 0 60px rgba(118, 75, 162, 0.6),
+            inset 0 0 30px rgba(255, 255, 255, 0.5);
+        filter: brightness(1.2) saturate(1.3);
+    }
+}
+
+.kaleidoscope-mirror img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: 20px;
+    display: block;
+    mix-blend-mode: luminosity;
+    opacity: 0.9;
+    animation: kaleidoscopeImageRotate 8s linear infinite;
+    animation-delay: var(--delay);
 }
 
-.kaleidoscope-item .delete-btn {
+@keyframes kaleidoscopeImageRotate {
+    from { transform: rotate(0deg) scale(1.2); }
+    to { transform: rotate(360deg) scale(1.2); }
+}
+
+.kaleidoscope-segment:hover .kaleidoscope-mirror {
+    transform: scale(1.15) rotateY(20deg);
+    box-shadow: 
+        0 0 40px rgba(102, 126, 234, 1),
+        0 0 80px rgba(118, 75, 162, 0.8);
+    z-index: 100;
+}
+
+.kaleidoscope-segment:hover .kaleidoscope-mirror img {
+    mix-blend-mode: normal;
+    opacity: 1;
+    filter: brightness(1.2);
+}
+
+/* 中心装饰 */
+.kaleidoscope-center {
     position: absolute;
-    top: 5px;
-    right: 5px;
-    background: rgba(229, 62, 62, 0.9);
+    width: 80px;
+    height: 80px;
+    background: radial-gradient(circle, 
+        rgba(255, 255, 255, 0.9) 0%, 
+        rgba(102, 126, 234, 0.6) 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: #667eea;
+    box-shadow: 
+        0 0 30px rgba(255, 255, 255, 0.8),
+        0 0 60px rgba(102, 126, 234, 0.6),
+        inset 0 0 20px rgba(255, 255, 255, 0.5);
+    animation: kaleidoscopeCenterPulse 2s ease-in-out infinite;
+    z-index: 200;
+}
+
+@keyframes kaleidoscopeCenterPulse {
+    0%, 100% {
+        transform: scale(1) rotate(0deg);
+        box-shadow: 
+            0 0 30px rgba(255, 255, 255, 0.8),
+            0 0 60px rgba(102, 126, 234, 0.6);
+    }
+    50% {
+        transform: scale(1.1) rotate(180deg);
+        box-shadow: 
+            0 0 40px rgba(255, 255, 255, 1),
+            0 0 80px rgba(102, 126, 234, 0.8);
+    }
+}
+
+.kaleidoscope-center i {
+    animation: kaleidoscopeCenterIcon 4s linear infinite;
+}
+
+@keyframes kaleidoscopeCenterIcon {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(-360deg); }
+}
+
+/* 暂停状态 - 冻结所有动画 */
+.kaleidoscope-scene.paused,
+.kaleidoscope-scene.paused *,
+.photo-kaleidoscope.paused,
+.photo-kaleidoscope.paused * {
+    animation-play-state: paused !important;
+}
+
+/* 删除按钮 */
+.kaleidoscope-delete {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(229, 62, 62, 0.95);
     color: white;
     border: none;
     border-radius: 50%;
-    width: 20px;
-    height: 20px;
+    width: 28px;
+    height: 28px;
     cursor: pointer;
     opacity: 0;
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
+    font-size: 12px;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.kaleidoscope-item:hover .delete-btn {
+.kaleidoscope-segment:hover .kaleidoscope-delete {
     opacity: 1;
+    transform: scale(1.1);
+}
+
+.kaleidoscope-delete:hover {
+    background: rgba(220, 38, 38, 1);
+    transform: scale(1.2) !important;
+}
+
+/* 万花筒交互控制面板 */
+.kaleidoscope-controls {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 300;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.control-group {
+    display: flex;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    padding: 8px;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.control-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: visible;
+}
+
+.control-btn:hover {
+    background: rgba(102, 126, 234, 0.2);
+    transform: scale(1.05);
+}
+
+.control-btn:active {
+    background: rgba(102, 126, 234, 0.3);
+    transform: scale(0.95);
+}
+
+.control-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* 确保按钮可点击区域足够大 */
+.control-btn::before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+    cursor: pointer;
+}
+
+.control-btn i {
+    font-size: 16px;
+}
+
+/* 颜色滤镜效果 */
+.kaleidoscope-scene[data-filter="warm"] .kaleidoscope-mirror img {
+    filter: sepia(0.3) saturate(1.4) hue-rotate(-10deg);
+}
+
+.kaleidoscope-scene[data-filter="cool"] .kaleidoscope-mirror img {
+    filter: saturate(0.8) hue-rotate(180deg) brightness(1.1);
+}
+
+.kaleidoscope-scene[data-filter="vibrant"] .kaleidoscope-mirror img {
+    filter: saturate(2) contrast(1.2) brightness(1.1);
+}
+
+.kaleidoscope-scene[data-filter="none"] .kaleidoscope-mirror img {
+    filter: none;
 }
 
 /* 螺旋布局 */
@@ -761,34 +1033,64 @@ body {
     opacity: 1;
 }
 
-/* 3D卡片布局 */
+/* 3D卡片布局 - Cover Flow效果 */
 .photo-card3d {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 40px;
     margin-bottom: 30px;
-    perspective: 1000px;
-    min-height: 500px;
+    perspective: 1500px;
+    perspective-origin: 50% 50%;
+    min-height: 600px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.05) 100%);
+    overflow: hidden;
 }
 
 .card3d-container {
+    position: relative;
+    width: 100%;
+    height: 500px;
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
     align-items: center;
-    gap: 30px;
-    padding: 40px;
-    min-height: 500px;
+    justify-content: center;
+    transform-style: preserve-3d;
 }
 
 .card3d-item {
-    width: 200px;
-    height: 250px;
-    position: relative;
+    position: absolute;
+    width: 280px;
+    height: 380px;
     transform-style: preserve-3d;
-    transition: all 0.5s ease;
+    transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1), 
+                filter 0.3s ease;
     cursor: pointer;
+    will-change: transform, opacity;
+    filter: brightness(0.95);
+    user-select: none;
+    -webkit-user-drag: none;
 }
 
-.card3d-item:hover {
-    transform: rotateY(15deg) rotateX(15deg) scale(1.05);
+.card3d-item.center-card {
+    cursor: pointer;
+    filter: brightness(1);
+}
+
+.card3d-item:hover:not(.center-card) {
+    filter: brightness(1.05);
+}
+
+.card3d-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.3s ease;
+}
+
+.card3d-item:hover:not(.center-card) .card3d-inner {
+    transform: scale(1.03);
 }
 
 .card3d-item .card-face {
@@ -796,54 +1098,138 @@ body {
     width: 100%;
     height: 100%;
     backface-visibility: hidden;
-    border-radius: 15px;
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+    border-radius: 20px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
     overflow: hidden;
-}
-
-.card3d-item .card-front {
     background: white;
 }
 
-.card3d-item .card-back {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    transform: rotateY(180deg);
+.card3d-item.center-card .card-face {
+    box-shadow: 0 35px 80px rgba(0, 0, 0, 0.4);
+}
+
+.card3d-item .card-front {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
-    font-size: 18px;
-    font-weight: 600;
+    position: relative;
 }
 
 .card3d-item img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
+}
+
+/* 倒影效果 */
+.card-reflection {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 40%;
+    background: linear-gradient(to bottom, 
+        rgba(255, 255, 255, 0) 0%, 
+        rgba(255, 255, 255, 0.1) 50%,
+        rgba(255, 255, 255, 0.2) 100%);
+    pointer-events: none;
 }
 
 .card3d-item .delete-btn {
     position: absolute;
-    top: 10px;
-    right: 10px;
-    background: rgba(229, 62, 62, 0.9);
+    top: 15px;
+    right: 15px;
+    background: rgba(229, 62, 62, 0.95);
     color: white;
     border: none;
     border-radius: 50%;
-    width: 30px;
-    height: 30px;
+    width: 40px;
+    height: 40px;
     cursor: pointer;
-    opacity: 0;
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: 16px;
     z-index: 10;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.card3d-item:hover .delete-btn {
-    opacity: 1;
+.card3d-item .delete-btn:hover {
+    background: rgba(220, 38, 38, 1);
+    transform: scale(1.1);
+}
+
+/* 3D导航按钮 */
+.card3d-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 50px;
+    height: 50px;
+    border: none;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: #4a5568;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    z-index: 200;
+}
+
+.card3d-nav:hover {
+    background: white;
+    color: #667eea;
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+}
+
+.card3d-nav.prev {
+    left: 40px;
+}
+
+.card3d-nav.next {
+    right: 40px;
+}
+
+/* 信息显示 */
+.card3d-info {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 15px 30px;
+    border-radius: 50px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    z-index: 200;
+}
+
+.card3d-info .card-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2d3748;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.card3d-info .card-counter {
+    font-size: 13px;
+    color: #667eea;
+    font-weight: 500;
 }
 
 .photo-item {
@@ -1122,8 +1508,32 @@ body {
     }
     
     .card3d-item {
-        width: 150px;
-        height: 200px;
+        width: 200px;
+        height: 280px;
+    }
+    
+    .card3d-nav {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+    
+    .card3d-nav.prev {
+        left: 20px;
+    }
+    
+    .card3d-nav.next {
+        right: 20px;
+    }
+    
+    .card3d-info {
+        padding: 10px 20px;
+        bottom: 20px;
+    }
+    
+    .card3d-info .card-name {
+        font-size: 14px;
+        max-width: 200px;
     }
     
     .upload-area {
@@ -1197,6 +1607,29 @@ body {
     
     .spiral-item {
         width: 50px;
+    }
+    
+    /* 轮播布局移动端优化 */
+    .carousel-container {
+        max-width: 100%;
+    }
+    
+    .carousel-viewport {
+        height: 300px;
+    }
+    
+    .carousel-track {
+        padding: 0 15%;
+    }
+    
+    .carousel-item {
+        min-width: 70%;
+    }
+    
+    .carousel-item.prev,
+    .carousel-item.next {
+        transform: scale(0.65);
+        opacity: 0.5;
         height: 50px;
     }
     
@@ -1215,13 +1648,45 @@ body {
     }
     
     .card3d-item {
-        width: 120px;
-        height: 160px;
+        width: 180px;
+        height: 240px;
     }
     
-    .kaleidoscope-item {
-        width: 80px;
-        height: 80px;
+    .photo-card3d {
+        min-height: 400px;
+        padding: 60px 20px;
+    }
+    
+    .kaleidoscope-segment {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .kaleidoscope-center {
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+    }
+    
+    .photo-kaleidoscope {
+        min-height: 500px;
+    }
+    
+    .kaleidoscope-controls {
+        top: 10px;
+        right: 10px;
+        scale: 0.9;
+    }
+    
+    .control-group {
+        padding: 6px;
+        gap: 6px;
+    }
+    
+    .control-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 12px;
     }
 }
 
@@ -1250,10 +1715,8 @@ body {
 /* 图片拖拽效果 */
 .photo-item.image-dragging,
 .star-item.image-dragging,
-.kaleidoscope-item.image-dragging,
 .spiral-item.image-dragging,
 .wave-item.image-dragging,
-.card3d-item.image-dragging,
 .carousel-item.image-dragging {
     opacity: 0.8;
     transform: scale(1.05);
@@ -1262,13 +1725,11 @@ body {
     transition: none;
 }
 
-/* 所有照片项的基础交互样式 */
+/* 所有照片项的基础交互样式（排除card3d-item和kaleidoscope） */
 .photo-item,
 .star-item,
-.kaleidoscope-item,
 .spiral-item,
 .wave-item,
-.card3d-item,
 .carousel-item {
     cursor: grab;
     user-select: none;
@@ -1277,10 +1738,8 @@ body {
 
 .photo-item:active,
 .star-item:active,
-.kaleidoscope-item:active,
 .spiral-item:active,
 .wave-item:active,
-.card3d-item:active,
 .carousel-item:active {
     cursor: grabbing;
 }
@@ -1600,10 +2059,8 @@ body {
 
 .photo-item.image-dragging .image-drag-indicator,
 .star-item.image-dragging .image-drag-indicator,
-.kaleidoscope-item.image-dragging .image-drag-indicator,
 .spiral-item.image-dragging .image-drag-indicator,
 .wave-item.image-dragging .image-drag-indicator,
-.card3d-item.image-dragging .image-drag-indicator,
 .carousel-item.image-dragging .image-drag-indicator {
     opacity: 1;
 }
@@ -1734,23 +2191,19 @@ body {
     border-top: 1px solid #e2e8f0;
 }
 
-/* 增强拖拽样式 */
+/* 增强拖拽样式（排除card3d-item和kaleidoscope） */
 .photo-item.dragging,
 .star-item.dragging,
-.kaleidoscope-item.dragging,
 .spiral-item.dragging,
-.wave-item.dragging,
-.card3d-item.dragging {
+.wave-item.dragging {
     opacity: 0.4;
     cursor: grabbing;
 }
 
 .photo-item.drag-over,
 .star-item.drag-over,
-.kaleidoscope-item.drag-over,
 .spiral-item.drag-over,
-.wave-item.drag-over,
-.card3d-item.drag-over {
+.wave-item.drag-over {
     border: 3px solid #667eea;
     background: rgba(102, 126, 234, 0.1);
     transform: scale(1.05);
