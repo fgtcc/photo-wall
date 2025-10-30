@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>照片墙 - Photo Wall</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=2.0">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
@@ -47,6 +47,21 @@
                     <button id="layoutMarketBtn" class="btn btn-outline" title="布局市场">
                         <i class="fas fa-store"></i> 布局市场
                     </button>
+                    <button id="layoutConfigBtn" class="btn btn-outline" title="布局配置" style="display: none;">
+                        <i class="fas fa-cog"></i> 配置
+                    </button>
+                </div>
+                <div class="view-controls" id="viewControls" style="display: none;">
+                    <button id="zoomInBtn" class="btn btn-sm" title="放大">
+                        <i class="fas fa-search-plus"></i>
+                    </button>
+                    <button id="zoomOutBtn" class="btn btn-sm" title="缩小">
+                        <i class="fas fa-search-minus"></i>
+                    </button>
+                    <button id="resetViewBtn" class="btn btn-sm" title="重置视图">
+                        <i class="fas fa-home"></i>
+                    </button>
+                    <span class="zoom-level" id="zoomLevel">100%</span>
                 </div>
                 <button id="uploadBtn" class="btn btn-primary">
                     <i class="fas fa-plus"></i> 上传照片
@@ -105,8 +120,12 @@
             
             <!-- 星空布局 -->
             <div class="photo-star" id="photoStar" style="display: none;">
-                <div class="star-container">
-                    <!-- 星空照片 -->
+                <div class="interactive-container" id="starInteractiveContainer">
+                    <div class="drag-indicator">拖拽移动</div>
+                    <div class="zoom-hint">滚轮缩放</div>
+                    <div class="star-container">
+                        <!-- 星空照片 -->
+                    </div>
                 </div>
             </div>
             
@@ -119,15 +138,23 @@
             
             <!-- 螺旋布局 -->
             <div class="photo-spiral" id="photoSpiral" style="display: none;">
-                <div class="spiral-container">
-                    <!-- 螺旋照片 -->
+                <div class="interactive-container" id="spiralInteractiveContainer">
+                    <div class="drag-indicator">拖拽移动</div>
+                    <div class="zoom-hint">滚轮缩放</div>
+                    <div class="spiral-container">
+                        <!-- 螺旋照片 -->
+                    </div>
                 </div>
             </div>
             
             <!-- 波浪布局 -->
             <div class="photo-wave" id="photoWave" style="display: none;">
-                <div class="wave-container">
-                    <!-- 波浪照片 -->
+                <div class="interactive-container" id="waveInteractiveContainer">
+                    <div class="drag-indicator">拖拽移动</div>
+                    <div class="zoom-hint">滚轮缩放</div>
+                    <div class="wave-container">
+                        <!-- 波浪照片 -->
+                    </div>
                 </div>
             </div>
             
@@ -203,6 +230,29 @@
             </div>
         </div>
 
+        <!-- 布局配置模态框 -->
+        <div class="modal" id="layoutConfigModal">
+            <div class="modal-content config-panel">
+                <div class="modal-header">
+                    <h2><i class="fas fa-cog"></i> 布局配置</h2>
+                    <span class="close" id="closeConfigModal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="configForm">
+                        <!-- 动态生成配置项 -->
+                    </form>
+                    <div class="config-actions">
+                        <button type="button" class="btn btn-secondary" id="resetConfig">
+                            <i class="fas fa-undo"></i> 重置默认
+                        </button>
+                        <button type="button" class="btn btn-primary" id="applyConfig">
+                            <i class="fas fa-check"></i> 应用
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- 加载指示器 -->
         <div class="loading" id="loading">
             <div class="spinner"></div>
@@ -210,6 +260,6 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="script.js?v=2.0"></script>
 </body>
 </html>
