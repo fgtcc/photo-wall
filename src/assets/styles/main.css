@@ -392,9 +392,6 @@ body {
     position: relative;
     width: 100%;
     height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
     /* 移除白色背景，使用透明 */
     background: transparent;
     /* 移除圆角和阴影 */
@@ -412,29 +409,30 @@ body {
 }
 
 .carousel-track {
-    display: flex;
-    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);  /* 更流畅的缓动 */
-    height: 80%;
-    align-items: center;
-    padding-left: 15%;  /* 初始偏移，让第一个item居中 */
     position: relative;
+    width: 100%;
+    height: 100%;
     transform-style: preserve-3d;  /* 保持3D效果 */
 }
 
 .carousel-item {
-    min-width: 70%;
-    max-width: 70%;
-    height: 85%;
-    position: relative;
-    flex-shrink: 0;
-    /* 初始状态：缩小、透明、模糊 */
-    transform: scale(0.75) translateZ(-200px);
-    opacity: 0.4;
-    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    position: absolute;
+    top: 50%;
+    left: 50%;  /* 所有图片基准位置都在中心 */
+    width: 50%;
+    height: 70%;
+    /* 默认状态：在屏幕外右侧 */
+    transform: translateX(150%) translateY(-50%) scale(0.7);
+    opacity: 0;
     pointer-events: none;
-    filter: blur(5px) brightness(0.7);
-    cursor: pointer;
+    filter: blur(8px) brightness(0.55);
+    /* 物理运动曲线：从0加速 → 匀速 → 减速到0 */
+    transition: 
+        transform 2.5s cubic-bezier(0.65, 0, 0.35, 1),
+        opacity 2s cubic-bezier(0.4, 0, 0.2, 1),
+        filter 2s cubic-bezier(0.4, 0, 0.2, 1);
     transform-style: preserve-3d;
+    will-change: transform, opacity, filter;
 }
 
 .carousel-item img {
@@ -446,54 +444,53 @@ body {
     background: #000;  /* 黑色背景，避免留白 */
 }
 
-/* 当前激活的轮播项（中心位置）- 沉浸式大图 */
+/* 当前激活的轮播项（中心位置）- 精确居中 */
 .carousel-item.active {
-    transform: scale(1.1) translateZ(0);  /* 放大显示 */
+    /* 中心位置：从左侧50%基准，向左平移50%（居中） */
+    transform: translateX(-50%) translateY(-50%) scale(1.2);
     opacity: 1;
     z-index: 3;
     pointer-events: auto;
-    filter: blur(0) brightness(1);
+    filter: blur(0) brightness(1.05);
     cursor: pointer;
 }
 
 .carousel-item.active img {
-    box-shadow: 
-        0 0 40px rgba(102, 126, 234, 0.4),
-        0 30px 80px rgba(0, 0, 0, 0.7);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
 }
 
 /* 左侧预览项 - 3D透视 */
 .carousel-item.prev {
-    transform: scale(0.7) translateZ(-200px) rotateY(15deg);  /* 向右旋转 */
-    opacity: 0.5;
+    /* 左侧位置：从中心向左平移，产生从右向左的滑动感 */
+    transform: translateX(-150%) translateY(-50%) scale(0.7) translateZ(-250px) rotateY(18deg);
+    opacity: 0.35;
     z-index: 2;
     pointer-events: auto;
-    filter: blur(3px) brightness(0.6);
+    filter: blur(8px) brightness(0.55);
     cursor: pointer;
-    transform-origin: right center;
 }
 
 /* 右侧预览项 - 3D透视 */
 .carousel-item.next {
-    transform: scale(0.7) translateZ(-200px) rotateY(-15deg);  /* 向左旋转 */
-    opacity: 0.5;
+    /* 右侧位置：从中心向右平移，产生从左向右的滑动感 */
+    transform: translateX(50%) translateY(-50%) scale(0.7) translateZ(-250px) rotateY(-18deg);
+    opacity: 0.35;
     z-index: 2;
     pointer-events: auto;
-    filter: blur(3px) brightness(0.6);
+    filter: blur(8px) brightness(0.55);
     cursor: pointer;
-    transform-origin: left center;
 }
 
 .carousel-item.prev:hover {
-    transform: scale(0.75) translateZ(-150px) rotateY(10deg);
-    opacity: 0.7;
-    filter: blur(2px) brightness(0.8);
+    transform: translateX(-145%) translateY(-50%) scale(0.75) translateZ(-200px) rotateY(14deg);
+    opacity: 0.5;
+    filter: blur(6px) brightness(0.7);
 }
 
 .carousel-item.next:hover {
-    transform: scale(0.75) translateZ(-150px) rotateY(-10deg);
-    opacity: 0.7;
-    filter: blur(2px) brightness(0.8);
+    transform: translateX(45%) translateY(-50%) scale(0.75) translateZ(-200px) rotateY(-14deg);
+    opacity: 0.5;
+    filter: blur(6px) brightness(0.7);
 }
 
 .carousel-btn {
@@ -537,10 +534,46 @@ body {
     right: 40px;
 }
 
+.carousel-btn.autoplay {
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+    top: auto;
+    bottom: 120px;
+}
+
+.carousel-btn.autoplay i {
+    font-size: 20px;
+}
+
 .carousel-btn:disabled {
     opacity: 0.3;
     cursor: not-allowed;
     background: rgba(0, 0, 0, 0.5);
+}
+
+/* 控制按钮容器 */
+.carousel-controls {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;  /* 让容器本身不阻挡点击 */
+}
+
+.carousel-controls .carousel-btn {
+    pointer-events: auto;  /* 恢复按钮的点击 */
+}
+
+/* fade过渡动画 */
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
 }
 
 .carousel-indicators {
@@ -2317,6 +2350,16 @@ body {
         right: 15px;
     }
     
+    .carousel-btn.autoplay {
+        bottom: 80px;
+        width: 50px;
+        height: 50px;
+    }
+    
+    .carousel-btn.autoplay i {
+        font-size: 18px;
+    }
+    
     .carousel-indicators {
         bottom: 20px;
         padding: 10px 20px;
@@ -2546,24 +2589,28 @@ body {
         max-width: 100%;
     }
     
-    .carousel-track {
-        padding-left: 15%;  /* 移动端也使用15%，保持一致 */
-    }
-    
     .carousel-item {
-        min-width: 70%;  /* 保持70%，与桌面端一致 */
-        max-width: 70%;
+        width: 60%;
+        height: 60%;
     }
     
     .carousel-item.active {
-        transform: scale(1.05) translateZ(0);
+        transform: translateX(-50%) translateY(-50%) scale(1.15);
+        filter: blur(0) brightness(1.05);
     }
     
-    .carousel-item.prev,
+    .carousel-item.prev {
+        /* 移动端左侧：向左平移更少，去掉旋转 */
+        transform: translateX(-130%) translateY(-50%) scale(0.7) translateZ(-200px) rotateY(0deg);
+        opacity: 0.35;
+        filter: blur(6px) brightness(0.55);
+    }
+    
     .carousel-item.next {
-        transform: scale(0.6) translateZ(-150px) rotateY(0deg);
-        opacity: 0.3;
-        filter: blur(4px) brightness(0.5);
+        /* 移动端右侧：向右平移更少，去掉旋转 */
+        transform: translateX(30%) translateY(-50%) scale(0.7) translateZ(-200px) rotateY(0deg);
+        opacity: 0.35;
+        filter: blur(6px) brightness(0.55);
     }
     
     .photo-wave {
@@ -2666,7 +2713,7 @@ body {
 .carousel-item {
     cursor: grab;
     user-select: none;
-    transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
+    /* transition已在主规则中定义，这里不再覆盖 */
 }
 
 .photo-item:active,

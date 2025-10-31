@@ -1,10 +1,11 @@
 <template>
   <div id="photoCarousel" class="photo-carousel">
-    <div class="carousel-container">
-      <div
-        class="carousel-track"
-        :style="{ transform: `translateX(-${currentIndex * 70}%)` }"
-      >
+    <div 
+      class="carousel-container"
+      @mousemove="handleMouseMove"
+      @mouseleave="handleMouseLeave"
+    >
+      <div class="carousel-track">
         <div
           v-for="(photo, index) in photos"
           :key="photo.id"
@@ -26,31 +27,49 @@
         </div>
       </div>
 
-      <button
-        class="carousel-btn prev"
-        @click.stop="previous"
-        :disabled="photos.length === 0"
-      >
-        <i class="fas fa-chevron-left"></i>
-      </button>
+      <!-- 控制按钮组 - 自动隐藏 -->
+      <transition name="fade">
+        <div v-show="showControls" class="carousel-controls">
+          <button
+            class="carousel-btn prev"
+            @click.stop="previous"
+            :disabled="photos.length === 0"
+          >
+            <i class="fas fa-chevron-left"></i>
+          </button>
 
-      <button
-        class="carousel-btn next"
-        @click.stop="next"
-        :disabled="photos.length === 0"
-      >
-        <i class="fas fa-chevron-right"></i>
-      </button>
+          <button
+            class="carousel-btn next"
+            @click.stop="next"
+            :disabled="photos.length === 0"
+          >
+            <i class="fas fa-chevron-right"></i>
+          </button>
 
-      <div class="carousel-indicators">
-        <div
-          v-for="(photo, index) in photos"
-          :key="index"
-          class="carousel-indicator"
-          :class="{ active: index === currentIndex }"
-          @click="goTo(index)"
-        ></div>
-      </div>
+          <!-- 自动播放控制按钮 -->
+          <button
+            class="carousel-btn autoplay"
+            @click.stop="toggleAutoPlay"
+            :disabled="photos.length === 0"
+            :title="isAutoPlaying ? '暂停自动播放' : '开始自动播放'"
+          >
+            <i :class="isAutoPlaying ? 'fas fa-pause' : 'fas fa-play'"></i>
+          </button>
+        </div>
+      </transition>
+
+      <!-- 指示器 - 自动隐藏 -->
+      <transition name="fade">
+        <div v-show="showControls" class="carousel-indicators">
+          <div
+            v-for="(photo, index) in photos"
+            :key="index"
+            class="carousel-indicator"
+            :class="{ active: index === currentIndex }"
+            @click="goTo(index)"
+          ></div>
+        </div>
+      </transition>
     </div>
   </div>
 </template>
@@ -72,6 +91,9 @@ const emit = defineEmits<{
 
 const currentIndex = ref(0)
 const autoPlayTimer = ref<number>()
+const isAutoPlaying = ref(true)  // 自动播放状态
+const showControls = ref(true)  // 控制按钮显示状态
+const hideControlsTimer = ref<number>()  // 自动隐藏定时器
 
 const prevIndex = computed(() => {
   if (props.photos.length === 0) return -1
@@ -113,6 +135,7 @@ function startAutoPlay() {
     autoPlayTimer.value = window.setInterval(() => {
       next()
     }, props.autoPlayInterval || 5000)
+    isAutoPlaying.value = true
   }
 }
 
@@ -121,14 +144,57 @@ function stopAutoPlay() {
     clearInterval(autoPlayTimer.value)
     autoPlayTimer.value = undefined
   }
+  isAutoPlaying.value = false
+}
+
+function toggleAutoPlay() {
+  if (isAutoPlaying.value) {
+    stopAutoPlay()
+  } else {
+    startAutoPlay()
+    isAutoPlaying.value = true
+  }
+}
+
+// 显示控制按钮
+function showControlsTemporarily() {
+  showControls.value = true
+  // 清除之前的定时器
+  if (hideControlsTimer.value) {
+    clearTimeout(hideControlsTimer.value)
+  }
+  // 3秒后自动隐藏
+  hideControlsTimer.value = window.setTimeout(() => {
+    showControls.value = false
+  }, 3000)
+}
+
+// 鼠标移动时显示控制按钮
+function handleMouseMove() {
+  showControlsTemporarily()
+}
+
+// 鼠标离开时立即开始隐藏倒计时
+function handleMouseLeave() {
+  if (hideControlsTimer.value) {
+    clearTimeout(hideControlsTimer.value)
+  }
+  hideControlsTimer.value = window.setTimeout(() => {
+    showControls.value = false
+  }, 1000)
 }
 
 onMounted(() => {
   startAutoPlay()
+  // 初始显示控制按钮
+  showControlsTemporarily()
 })
 
 onUnmounted(() => {
   stopAutoPlay()
+  if (hideControlsTimer.value) {
+    clearTimeout(hideControlsTimer.value)
+  }
 })
 </script>
 
