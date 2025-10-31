@@ -221,31 +221,42 @@ export async function validatePhotos(photos: Photo[]): Promise<Photo[]> {
 }
 
 /**
- * 生成默认示例图片（只生成实际存在的图片）
+ * 图片索引接口
  */
-export function generateDefaultPhotos(count: number = 30): Photo[] {
-  const photos: Photo[] = []
-  
-  // 实际存在的图片序号（public/images目录下）
-  // 注意：缺少5.jpg
-  const existingImages = [
-    1, 2, 3, 4, 6, 7, 8, 9, 10,
-    11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-    21, 22, 23, 24, 25, 26, 27, 28, 29, 30
-  ]
-  
-  // 只生成实际存在的图片
-  const imagesToLoad = existingImages.slice(0, count)
-  
-  imagesToLoad.forEach((num, index) => {
-    photos.push({
+interface ImageIndex {
+  count: number
+  images: number[]
+  generatedAt: string
+}
+
+/**
+ * 动态生成默认示例图片
+ * 从 index.json 读取图片列表
+ */
+export async function generateDefaultPhotos(): Promise<Photo[]> {
+  try {
+    // 从 index.json 读取图片列表
+    const response = await fetch('/images/index.json')
+    if (!response.ok) {
+      throw new Error(`Failed to load image index: ${response.status}`)
+    }
+    
+    const index: ImageIndex = await response.json()
+    const imageNumbers = index.images || []
+    
+    console.log(`加载了 ${imageNumbers.length} 张默认图片`)
+    
+    // 生成照片对象数组
+    return imageNumbers.map((num: number, index: number) => ({
       id: Date.now() + index,
       url: `/images/${num}.jpg`,
       name: `风景照片 ${num}`,
       uploadTime: new Date().toISOString()
-    })
-  })
-  
-  return photos
+    }))
+  } catch (error) {
+    console.error('Failed to load default photos:', error)
+    // 如果加载失败，返回空数组
+    return []
+  }
 }
 

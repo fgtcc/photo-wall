@@ -38,7 +38,7 @@ export const usePhotoStore = defineStore('photo', () => {
     } else {
       // 加载默认示例图片
       isLoading.value = true
-      const defaultPhotos = generateDefaultPhotos(30)
+      const defaultPhotos = await generateDefaultPhotos()
       photos.value = await validatePhotos(defaultPhotos)
       isLoading.value = false
       savePhotos(true)
