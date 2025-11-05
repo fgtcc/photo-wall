@@ -4,8 +4,10 @@
       class="fab-main"
       :class="{ active: menuOpen }"
       @click="toggleMenu"
+      title="切换布局"
     >
       <i :class="currentLayoutIcon"></i>
+      <span class="fab-label">切换布局</span>
     </button>
 
     <Transition name="fab-menu">

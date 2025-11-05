@@ -171,6 +171,39 @@ body {
     transform: rotate(135deg);
 }
 
+/* FAB 标签提示 */
+.fab-label {
+    position: absolute;
+    right: calc(100% + 12px);
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateX(10px);
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.fab-label::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 100%;
+    transform: translateY(-50%);
+    border: 6px solid transparent;
+    border-left-color: rgba(0, 0, 0, 0.85);
+}
+
+.fab-main:hover .fab-label {
+    opacity: 1;
+    transform: translateX(0);
+}
+
 .fab-menu {
     position: absolute;
     bottom: 75px;
@@ -1344,31 +1377,40 @@ body {
 
 /* 万花筒布局 - 动态3D镜像效果 */
 .photo-kaleidoscope {
-    margin-bottom: 30px;
-    position: relative;
-    min-height: 700px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
     background: radial-gradient(circle at center, 
         rgba(102, 126, 234, 0.1) 0%, 
         rgba(118, 75, 162, 0.2) 50%,
         rgba(0, 0, 0, 0.4) 100%);
-    border-radius: 20px;
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
     perspective: 1500px;
+    z-index: 1;
 }
 
 .kaleidoscope-scene {
     position: relative;
     width: 100%;
     height: 100%;
-    min-height: 700px;
     transform-style: preserve-3d;
     display: flex;
     align-items: center;
     justify-content: center;
     will-change: transform;
+    cursor: grab;
+}
+
+.kaleidoscope-scene:active {
+    cursor: grabbing;
 }
 
 .kaleidoscope-segment {
@@ -1568,12 +1610,55 @@ body {
 /* 万花筒交互控制面板 */
 .kaleidoscope-controls {
     position: absolute;
-    top: 20px;
+    top: 80px; /* 避开工具栏，工具栏高度60px + 20px间距 */
     right: 20px;
-    z-index: 300;
+    z-index: 1001; /* 高于工具栏的1000，确保可点击 */
     display: flex;
     flex-direction: column;
     gap: 10px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.kaleidoscope-controls.collapsed {
+    transform: translateX(calc(100% + 10px));
+}
+
+.kaleidoscope-controls.collapsed .controls-toggle {
+    transform: translateX(-60px);
+}
+
+.controls-toggle {
+    position: absolute;
+    top: 0;
+    right: calc(100% + 10px);
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    z-index: 310;
+}
+
+.controls-toggle:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.controls-toggle i {
+    font-size: 18px;
+    color: #667eea;
+    transition: transform 0.3s ease;
+}
+
+.kaleidoscope-controls.collapsed .controls-toggle i {
+    transform: rotate(180deg);
 }
 
 .control-group {
@@ -2081,7 +2166,7 @@ body {
 .modal {
     display: none;
     position: fixed;
-    z-index: 1000;
+    z-index: 9999; /* 最高层级，确保在所有元素之上 */
     left: 0;
     top: 0;
     width: 100%;
@@ -2289,6 +2374,10 @@ body {
         width: 55px;
         height: 55px;
         font-size: 22px;
+    }
+    
+    .fab-label {
+        display: none; /* 移动端隐藏标签 */
     }
     
     .fab-item {
@@ -2653,7 +2742,7 @@ body {
     }
     
     .kaleidoscope-controls {
-        top: 10px;
+        top: 70px; /* 移动端也避开工具栏 */
         right: 10px;
         scale: 0.9;
     }

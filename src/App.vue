@@ -18,8 +18,9 @@
       @reset="layoutStore.resetInteraction()"
     />
 
-    <!-- 布局FAB -->
+    <!-- 布局FAB (万花筒布局时隐藏) -->
     <LayoutFAB
+      v-if="layoutStore.currentLayout !== 'kaleidoscope'"
       :current-layout="layoutStore.currentLayout"
       @layout-change="handleLayoutChange"
     />
@@ -69,6 +70,16 @@
         @delete-photo="handleDeletePhoto"
       />
 
+      <!-- 万花筒布局 -->
+      <KaleidoscopeLayout
+        v-else-if="layoutStore.currentLayout === 'kaleidoscope'"
+        :photos="photoStore.photos"
+        :config="layoutStore.getLayoutConfig('kaleidoscope')"
+        @photo-click="handlePhotoClick"
+        @delete-photo="handleDeletePhoto"
+        @exit-layout="handleExitKaleidoscope"
+      />
+
       <!-- 空状态 -->
       <div v-else-if="!photoStore.hasPhotos" class="empty-state">
         <i class="fas fa-images"></i>
@@ -81,9 +92,9 @@
         <i class="fas fa-tools"></i>
         <h3>{{ layoutStore.currentLayout }} 布局</h3>
         <p>此布局组件正在开发中...</p>
-        <small>已实现: Grid, Masonry, List, Carousel, Star</small>
+        <small>已实现: Grid, Masonry, List, Carousel, Star, Kaleidoscope</small>
         <br>
-        <small>待补充: Spiral, Wave, Kaleidoscope, Card3D</small>
+        <small>待补充: Spiral, Wave, Card3D</small>
       </div>
     </div>
 
@@ -166,6 +177,7 @@ import MasonryLayout from './components/layouts/MasonryLayout.vue'
 import ListLayout from './components/layouts/ListLayout.vue'
 import CarouselLayout from './components/layouts/CarouselLayout.vue'
 import StarLayout from './components/layouts/StarLayout.vue'
+import KaleidoscopeLayout from './components/layouts/KaleidoscopeLayout.vue'
 import LayoutMarketModal from './components/modals/LayoutMarketModal.vue'
 import LayoutConfigModal from './components/modals/LayoutConfigModal.vue'
 
@@ -321,16 +333,20 @@ function handleExportLayout() {
 
 function handleResetConfig() {
   const layout = layoutStore.currentLayout
-  if (layout === 'star' || layout === 'spiral' || layout === 'wave') {
+  if (layout === 'star' || layout === 'spiral' || layout === 'wave' || layout === 'kaleidoscope') {
     layoutStore.resetLayoutConfig(layout)
   }
 }
 
 function handleUpdateConfig(config: any) {
   const layout = layoutStore.currentLayout
-  if (layout === 'star' || layout === 'spiral' || layout === 'wave') {
+  if (layout === 'star' || layout === 'spiral' || layout === 'wave' || layout === 'kaleidoscope') {
     layoutStore.setLayoutConfig(layout, config)
   }
+}
+
+function handleExitKaleidoscope() {
+  layoutStore.switchLayout('grid')
 }
 </script>
 
